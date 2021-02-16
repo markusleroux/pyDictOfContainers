@@ -5,15 +5,37 @@ DictOfContainer.py
 ------------
 A dictionary of dictionaries with automatic maintanence to remove empty dictionary values.
 
-TODO:
-    - Clearly need a better solution to overriding methods in wrapper
-        - Why is the override not working? Tried with types.MethodType
+Done: Clearly need a better solution to overriding methods in wrapper
         - Really what I need is a hook that wraps all the relevant methods in a check that the length is not 0
         - Maybe a decorator? Probably a decorator...
-    - What are the relevant methods that I haven't considered?
-    - Should cache the _container_factory
+TODO: Why did the override not work in init body? Tried types.MethodType
+TODO: What are the relevant methods that I haven't considered?
+TODO: Should cache the _container_factory
+DONE: pop should inherit its default from super().pop (would be solved using decorator)
+TODO: cast back to base class of _Container when unlinked from dict
+TODO: figure out set printing with its type
+
+Decorators can be used to defer work to instantiation time
 '''
 from collections.abc import Container
+
+
+def method_decorator(method):
+    def new_method(*args, **kwargs):
+        result = method(*args, **kwargs)
+        self = args[0]
+        if len(self) == 0:
+            del self._outer_obj[self._outer_key]
+        return result
+    return new_method
+
+
+def class_decorator(cls):
+    for attr in {'__delitem__', 'pop', 'clear'}:
+        if hasattr(cls, attr):
+            setattr(cls, attr, method_decorator(getattr(cls, attr)))
+    return cls
+
 
 class DictOfContainer(dict):
     def __init__(self, *args, **kwargs):
@@ -21,58 +43,21 @@ class DictOfContainer(dict):
 
     @staticmethod
     def _container_factory(outer_obj, outer_key, item):
+        @class_decorator
         class _Container(type(item)):
             def __init__(self, outer_obj, outer_key, item):
                 super().__init__(item)
                 self._outer_obj = outer_obj
                 self._outer_key = outer_key
-                self.flags = (hasattr(item, '__delitem__'), hasattr(item, 'pop'), hasattr(item, 'clear'))
-
-                # if hasattr(self, '__delitem__'):
-                #     def __delitem__(self, key):
-                #         super().__delitem__(key)
-                #         if len(self) == 0:
-                #             del self._outer_obj[self._outer_key]
-                #     self.__delitem__ = __delitem__
-
-                # if hasattr(self, 'pop'):
-                #     def pop(self, key):
-                #         super().pop(key)
-                #         if len(self) == 0:
-                #             del self._outer_obj[self._outer_key]
-                #     self.pop = pop
-
-                # if hasattr(self, 'clear'):
-                #     def clear(self):
-                #         print('ehij')
-                #         del self._outer_obj[self._outer_key]
-                #     self.clear = clear
-
-            def __delitem__(self, key):
-                if self.flags[0]:
-                    super().__delitem__(key)
-                    if len(self) == 0:
-                        del self._outer_obj[self._outer_key]
-
-            def pop(self, key):
-                if self.flags[1]:
-                    super().pop(key)
-                    if len(self) == 0:
-                        del self._outer_obj[self._outer_key]
-
-            def clear(self):
-                if self.flags[3]:
-                    del self._outer_obj[self._outer_key]
 
         return _Container(outer_obj, outer_key, item)
 
     def __setitem__(self, key, item):
         if isinstance(item, Container):
             if len(item) != 0:
-                # super().__setitem__(key, self._Container(self, key, item))
                 super().__setitem__(key, self._container_factory(self, key, item))
         else:
-            raise ValueError("Expected type dict, got type {}".format(type(item)))
+            raise ValueError("Expected container type, got type {}".format(type(item)))
 
     def __getitem__(self, key):
         return super().__getitem__(key)
@@ -80,7 +65,7 @@ class DictOfContainer(dict):
     def __repr__(self):
         if len(self) == 0:
             return '{}'
-        return '{\n' + '\n'.join('{}: {}'.format(key, subdict) for key, subdict in self.items()) + '\n}'
+        return '{\n' + '\n'.join('{}: {}'.format(key, container) for key, container in self.items()) + '\n}'
 
     def update(self, *args, **kwargs):
         if args:
@@ -97,10 +82,11 @@ class DictOfContainer(dict):
                 self[key] = kwargs[key]
 
 
-d = DictOfContainer({1: {2: 3}, 4: [5, 6]})
+d = DictOfContainer({1: {2: 3}, 4: [5, 6], 7: {8, 9}})
 
 # d[1].clear()
 # del d[1][2]
-d[4].pop(-1)
-d[4].pop(-1)
+d[4].pop()
+d[4].pop()
 print(d)
+print(str(d[7]))
