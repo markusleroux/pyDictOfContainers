@@ -1,23 +1,23 @@
 #!/usr/bin/env python
 
 import pytest
-from DictOfDict import DictOfDict
+from DictOfContainer import DictOfContainer
 
 @pytest.fixture
 def int_dict_of_dict():
-    return DictOfDict({1: {2: 3}, 4: {5: 6, 7: 8, 9: 10}})
+    return DictOfContainer({1: {2: 3}, 4: {5: 6, 7: 8, 9: 10}})
 
 @pytest.fixture
 def dict_with_empty_dict():
-    return DictOfDict({1: {2: 3}, 4: {5: 6, 7: 8}, 9: {10: 11}, 12: {}})
+    return DictOfContainer({1: {2: 3}, 4: {5: 6, 7: 8}, 9: {10: 11}, 12: {}})
 
 @pytest.fixture
 def string_dict_of_dict():
-    return DictOfDict({'hello': {'world': '42'}})
+    return DictOfContainer({'hello': {'world': '42'}})
 
 @pytest.fixture
 def empty_dict_of_dict():
-    return DictOfDict({})
+    return DictOfContainer({})
 
 
 def test_empty_value(dict_with_empty_dict):
