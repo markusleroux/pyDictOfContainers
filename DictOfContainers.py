@@ -50,7 +50,7 @@ def method_decorator(method):
     return new_method
 
 
-class DictOfContainer(dict):
+class DictOfContainers(dict):
     def __init__(self, *args, **kwargs):
         self.update(*args, **kwargs)
 

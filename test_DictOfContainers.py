@@ -1,27 +1,27 @@
 #!/usr/bin/env python
 
 import pytest
-from DictOfContainer import DictOfContainer
+from DictOfContainers import DictOfContainers
 
 @pytest.fixture
 def int_dict_of_dict():
-    return DictOfContainer({1: {2: 3}, 4: {5: 6, 7: 8, 9: 10}})
+    return DictOfContainers({1: {2: 3}, 4: {5: 6, 7: 8, 9: 10}})
 
 @pytest.fixture
 def dict_with_empty_dict():
-    return DictOfContainer({1: {2: 3}, 4: {5: 6, 7: 8}, 9: {10: 11}, 12: {}})
+    return DictOfContainers({1: {2: 3}, 4: {5: 6, 7: 8}, 9: {10: 11}, 12: {}})
 
 @pytest.fixture
 def string_dict_of_dict():
-    return DictOfContainer({'hello': {'world': '42'}})
+    return DictOfContainers({'hello': {'world': '42'}})
 
 @pytest.fixture
 def empty_dict_of_dict():
-    return DictOfContainer({})
+    return DictOfContainers({})
 
 @pytest.fixture
 def mixed_dict():
-    return DictOfContainer({1: [2, 3], 4: {5: 6}, 7: {8}})
+    return DictOfContainers({1: [2, 3], 4: {5: 6}, 7: {8}})
 
 # ---------------------------
 
