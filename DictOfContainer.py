@@ -21,21 +21,27 @@ from collections.abc import Container
 
 
 class WrapperMetaClass(type):
-    # def __new__(metaclass, classname, bases, attrs):
-        # classname = bases[0].__name__ + classname
-        # return super(WrapperMetaClass, metaclass).__new__(metaclass, classname, bases, attrs)
+    cache: dict[str, type] = dict()
 
     def __call__(self, *args, **kwargs):
+        item = args[2]
 
-        class _Wrapper(type(args[2])):
-            def __init__(self, outer_obj, outer_key, item):
-                super().__init__(item)
+        if type(item).__name__ not in self.cache:
+            def obj_constructor(self, outer_obj, outer_key, item):
+                super(type(self), self).__init__(item)
                 self._outer_obj = outer_obj
                 self._outer_key = outer_key
 
-        for attr in {'__delitem__', 'pop', 'clear'}:
-            if hasattr(_Wrapper, attr):
-                setattr(_Wrapper, attr, method_decorator(getattr(_Wrapper, attr)))
+            _Wrapper = type(type(item).__name__ + 'Wrapper', (type(item),),
+                            type(item).__dict__ | {'__init__': obj_constructor})
+
+            for attr in {'__delitem__', 'pop', 'clear'}:
+                if hasattr(_Wrapper, attr):
+                    setattr(_Wrapper, attr, method_decorator(getattr(_Wrapper, attr)))
+
+            self.cache[type(item).__name__] = _Wrapper
+        else:
+            _Wrapper = self.cache[type(item).__name__]
 
         return _Wrapper(*args, **kwargs)
 
@@ -49,13 +55,6 @@ def method_decorator(method):
             del self._outer_obj[self._outer_key]
         return result
     return new_method
-
-
-def class_decorator(cls):
-    for attr in {'__delitem__', 'pop', 'clear'}:
-        if hasattr(cls, attr):
-            setattr(cls, attr, method_decorator(getattr(cls, attr)))
-    return cls
 
 
 class DictOfContainer(dict):
@@ -95,8 +94,8 @@ class DictOfContainer(dict):
                 self[key] = kwargs[key]
 
 
-d = DictOfContainer({1: {2: 3}, 4: [5, 6], 7: {8, 9}})
-
+d = DictOfContainer({1: {2: 3}, 4: [5, 6], 7: {8, 9}, 10: [11]})
+print(d)
 # d[1].clear()
 # del d[1][2]
 d[4].pop()
