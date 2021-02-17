@@ -20,6 +20,12 @@ Decorators can be used to defer work to instantiation time
 from collections.abc import Container
 
 
+class WrapperMetaClass(type):
+    def __new__(metaclass, classname, bases, attrs):
+        classname = bases[0].__name__ + classname
+        return super(WrapperMetaClass, metaclass).__new__(metaclass, classname, bases, attrs)
+
+
 def method_decorator(method):
     def new_method(*args, **kwargs):
         result = method(*args, **kwargs)
@@ -44,13 +50,13 @@ class DictOfContainer(dict):
     @staticmethod
     def _container_factory(outer_obj, outer_key, item):
         @class_decorator
-        class _Container(type(item)):
+        class Wrapper(type(item), metaclass = WrapperMetaClass):
             def __init__(self, outer_obj, outer_key, item):
                 super().__init__(item)
                 self._outer_obj = outer_obj
                 self._outer_key = outer_key
 
-        return _Container(outer_obj, outer_key, item)
+        return Wrapper(outer_obj, outer_key, item)
 
     def __setitem__(self, key, item):
         if isinstance(item, Container):
@@ -89,4 +95,3 @@ d = DictOfContainer({1: {2: 3}, 4: [5, 6], 7: {8, 9}})
 d[4].pop()
 d[4].pop()
 print(d)
-print(str(d[7]))
