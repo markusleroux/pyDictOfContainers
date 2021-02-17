@@ -3,20 +3,14 @@
 '''
 DictOfContainer.py
 ------------
-A dictionary of dictionaries with automatic maintanence to remove empty dictionary values.
+A dictionary of containers with automatic maintanence to remove empty container values.
 
-Done: Clearly need a better solution to overriding methods in wrapper
-        - Really what I need is a hook that wraps all the relevant methods in a check that the length is not 0
-        - Maybe a decorator? Probably a decorator...
-TODO: Why did the override not work in init body? Tried types.MethodType
-TODO: What are the relevant methods that I haven't considered?
-TODO: Should cache the _container_factory
-DONE: pop should inherit its default from super().pop (would be solved using decorator)
-TODO: cast back to base class of _Container when unlinked from dict
-TODO: figure out set printing with its type
+Note: values are copied into the dictionary.
+--------------------------
 
-Decorators can be used to defer work to instantiation time
+
 '''
+
 from collections.abc import Container
 
 
@@ -44,7 +38,6 @@ class WrapperMetaClass(type):
             _Wrapper = self.cache[type(item).__name__]
 
         return _Wrapper(*args, **kwargs)
-
 
 
 def method_decorator(method):
@@ -92,12 +85,3 @@ class DictOfContainer(dict):
         for key in kwargs:
             if len(other[key]) != 0:
                 self[key] = kwargs[key]
-
-
-d = DictOfContainer({1: {2: 3}, 4: [5, 6], 7: {8, 9}, 10: [11]})
-print(d)
-# d[1].clear()
-# del d[1][2]
-d[4].pop()
-d[4].pop()
-print(d)

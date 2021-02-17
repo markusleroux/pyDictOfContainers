@@ -19,6 +19,12 @@ def string_dict_of_dict():
 def empty_dict_of_dict():
     return DictOfContainer({})
 
+@pytest.fixture
+def mixed_dict():
+    return DictOfContainer({1: [2, 3], 4: {5: 6}, 7: {8}})
+
+# ---------------------------
+
 
 def test_empty_value(dict_with_empty_dict):
     assert len(dict_with_empty_dict) == 3
@@ -76,3 +82,9 @@ def test_outer_pop(int_dict_of_dict):
 def test_inner_pop(string_dict_of_dict):
     string_dict_of_dict['hello'].pop('world')
     assert len(string_dict_of_dict) == 0
+
+
+def test_default_pop(mixed_dict):
+    mixed_dict[1].pop()
+    mixed_dict[1].pop()
+    assert len(mixed_dict) == 2
