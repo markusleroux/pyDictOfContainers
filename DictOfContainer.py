@@ -21,9 +21,24 @@ from collections.abc import Container
 
 
 class WrapperMetaClass(type):
-    def __new__(metaclass, classname, bases, attrs):
-        classname = bases[0].__name__ + classname
-        return super(WrapperMetaClass, metaclass).__new__(metaclass, classname, bases, attrs)
+    # def __new__(metaclass, classname, bases, attrs):
+        # classname = bases[0].__name__ + classname
+        # return super(WrapperMetaClass, metaclass).__new__(metaclass, classname, bases, attrs)
+
+    def __call__(self, *args, **kwargs):
+
+        class _Wrapper(type(args[2])):
+            def __init__(self, outer_obj, outer_key, item):
+                super().__init__(item)
+                self._outer_obj = outer_obj
+                self._outer_key = outer_key
+
+        for attr in {'__delitem__', 'pop', 'clear'}:
+            if hasattr(_Wrapper, attr):
+                setattr(_Wrapper, attr, method_decorator(getattr(_Wrapper, attr)))
+
+        return _Wrapper(*args, **kwargs)
+
 
 
 def method_decorator(method):
@@ -47,21 +62,13 @@ class DictOfContainer(dict):
     def __init__(self, *args, **kwargs):
         self.update(*args, **kwargs)
 
-    @staticmethod
-    def _container_factory(outer_obj, outer_key, item):
-        @class_decorator
-        class Wrapper(type(item), metaclass = WrapperMetaClass):
-            def __init__(self, outer_obj, outer_key, item):
-                super().__init__(item)
-                self._outer_obj = outer_obj
-                self._outer_key = outer_key
-
-        return Wrapper(outer_obj, outer_key, item)
+    class WrapperFactory(metaclass = WrapperMetaClass):
+        ...
 
     def __setitem__(self, key, item):
         if isinstance(item, Container):
             if len(item) != 0:
-                super().__setitem__(key, self._container_factory(self, key, item))
+                super().__setitem__(key, self.WrapperFactory(self, key, item))
         else:
             raise ValueError("Expected container type, got type {}".format(type(item)))
 
