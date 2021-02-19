@@ -15,6 +15,22 @@ from collections.abc import Container
 
 
 class WrapperMetaClass(type):
+    '''A meta class which generates new classes when WrapperFactory is called.
+
+    A meta class is used because we wish to construct a class which subclasses the
+    class of the item argument to the WrapperFactory initialization function. A
+    generic type approach is not appropriate here because we lose the type information
+    we wish to preserve, i.e. isinstance(type(item), newitem) is False if newitem is
+    an instance of a class subclassing a generic type.
+
+    WrapperMetaClass implements a custom call function, which intercepts the initialization
+    of a new object in the wrapper factory class. A new class is constructed dependent on the
+    type of the item argument to the call (or fetched from the cache), and the method_decorator
+    decorator is added to the appropriate methods if they exist before an object of the
+    new class is returned.
+
+    
+    '''
     cache: dict[str, type] = dict()
 
     def __call__(self, *args, **kwargs):
@@ -41,20 +57,27 @@ class WrapperMetaClass(type):
 
 
 def method_decorator(method):
+    '''Decorator which deletes values from the outer dictionary if their length is 0.'''
     def new_method(*args, **kwargs):
         result = method(*args, **kwargs)
         self = args[0]
         if len(self) == 0:
-            del self._outer_obj[self._outer_key]
+            try:
+                del self._outer_obj[self._outer_key]
+            except KeyError:
+                # If the key has been removed from the dictionary
+                pass
         return result
     return new_method
 
 
 class DictOfContainers(dict):
+    '''A dictionary class with containers for values that automates deletion of empty containers.'''
     def __init__(self, *args, **kwargs):
         self.update(*args, **kwargs)
 
     class WrapperFactory(metaclass = WrapperMetaClass):
+        '''See WrapperMetaClass.'''
         ...
 
     def __setitem__(self, key, item):
